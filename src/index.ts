@@ -39,7 +39,9 @@ function application(request: http.IncomingMessage, response: http.ServerRespons
     };
 
     request.once('end', () => {
+        console.log('[SERVER] data raw receiving', data);
         let monitoring: {[key: string]: any} = JSON.parse(data);
+
         try {
             axios.post(
                 `https://discord.com/api/webhooks/${process.env.WEBHOOK_ID}/${process.env.WEBHOOK_TOKEN}`,
