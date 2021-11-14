@@ -10,7 +10,6 @@ function application(request: http.IncomingMessage, response: http.ServerRespons
     let data: string = '';
 
     function handlerData(chunk: string): void {
-        console.log(chunk);
         data += Buffer.from(chunk).toString('utf-8');
     };
 
@@ -59,13 +58,13 @@ function application(request: http.IncomingMessage, response: http.ServerRespons
             };
 
             if (monitoring.incident?.resource?.labels.project_id) {
-                webhookData.embed.footer = {
+                webhookData.embed[0].footer = {
                     text: 'Project ID : ' + monitoring.incident.resource.labels.project_id
                 };
             };
 
             if (monitoring.incident?.resource_display_name) {
-                webhookData.embed.author = {
+                webhookData.embed[0].author = {
                     name: 'Resource : ' + monitoring.incident?.resource_display_name
                 };
             };
@@ -118,7 +117,7 @@ function application(request: http.IncomingMessage, response: http.ServerRespons
                 });
             };
 
-            webhookData.embed.fields = fields;
+            webhookData.embed[0].fields = fields;
 
             axios.post(
                 `https://discord.com/api/webhooks/${process.env.WEBHOOK_ID}/${process.env.WEBHOOK_TOKEN}`,

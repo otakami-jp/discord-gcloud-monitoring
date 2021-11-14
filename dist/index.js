@@ -30,7 +30,6 @@ function application(request, response) {
     const authorization = request.headers.authorization;
     let data = '';
     function handlerData(chunk) {
-        console.log(chunk);
         data += Buffer.from(chunk).toString('utf-8');
     }
     ;
