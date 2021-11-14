@@ -3,10 +3,9 @@ import * as net from 'net';
 import axios from 'axios';
 
 const port: number = process.env.PORT ? parseInt(process.env.PORT) : 8080;
+const authenticate: string = Buffer.from(process.env.AUTH_USERNAME + ':' + process.env.AUTH_PASSWORD).toString('base64');
 
 function application(request: http.IncomingMessage, response: http.ServerResponse): void {
-    const authenticate: string = Buffer.from(process.env.AUTH_USERNAME + ':' + process.env.AUTH_PASSWORD).toString('base64');
-    console.log(authenticate, process.env);
     const authorization: string | undefined = request.headers.authorization;
     let data: string = '';
 
@@ -43,58 +42,87 @@ function application(request: http.IncomingMessage, response: http.ServerRespons
         let monitoring: {[key: string]: any} = JSON.parse(data);
 
         try {
+            const webhookData: {[key: string]: any} = {
+                embeds: [
+                    {
+                        title: 'Incident report (' + monitoring.incident.incident_id + ')',
+                        type: 'rich',
+                        description: monitoring.incident?.summary,
+                        url: monitoring.incident?.url,
+                        color: monitoring.version == 'test' ? 0xE1B621 : 0xE12121,
+                    }
+                ]
+            };
+
+            if (monitoring.incident?.documentation?.content) {
+                webhookData.content = monitoring.incident.documentation.content;
+            };
+
+            if (monitoring.incident?.resource?.labels.project_id) {
+                webhookData.embed.footer = {
+                    text: 'Project ID : ' + monitoring.incident.resource.labels.project_id
+                };
+            };
+
+            if (monitoring.incident?.resource_display_name) {
+                webhookData.embed.author = {
+                    name: 'Resource : ' + monitoring.incident?.resource_display_name
+                };
+            };
+
+            const fields = [
+                {
+                    name: 'Monitoring version',
+                    value: monitoring.version,
+                    inline: true
+                },
+            ];
+
+            if (monitoring.incident?.scoping_project_id) {
+                fields.push({
+                    name: 'Scoping project id',
+                    value: monitoring.incident.scoping_project_id,
+                    inline: true
+                });
+            };
+
+            if (monitoring.incident?.ended_at && monitoring.incident?.started_at) {
+                fields.push({
+                    name: 'Incident timing',
+                    value: (monitoring.incident.ended_at - monitoring.incident.started_at) / 60000 + ' min',
+                    inline: true
+                });
+            };
+
+            if (monitoring.incident?.state) {
+                fields.push({
+                    name: 'Incident incident',
+                    value: monitoring.incident.state,
+                    inline: true
+                });
+            };
+
+            if (monitoring.incident?.resource_type_display_name) {
+                fields.push({
+                    name: 'Resource type',
+                    value: monitoring.incident.resource_type_display_name,
+                    inline: true
+                });
+            };
+
+            if (monitoring.incident?.resource_name) {
+                fields.push({
+                    name: 'Resource name',
+                    value: monitoring.incident.resource_name,
+                    inline: true
+                });
+            };
+
+            webhookData.embed.fields = fields;
+
             axios.post(
                 `https://discord.com/api/webhooks/${process.env.WEBHOOK_ID}/${process.env.WEBHOOK_TOKEN}`,
-                {
-                    content: monitoring.incident.documentation.content,
-                    embeds: [
-                        {
-                            title: 'Incident report (' + monitoring.incident.resource_name + ')',
-                            type: 'rich',
-                            description: monitoring.incident.summary,
-                            url: monitoring.incident.url,
-                            color: 0xE12121,
-                            footer: {
-                                text: 'Project ID : ' + monitoring.incident.resource.labels.project_id
-                            },
-                            author: {
-                                name: 'Resource : ' + monitoring.incident.resource_display_name
-                            },
-                            fields: [
-                                {
-                                    name: 'Monitoring version',
-                                    value: 'v' + monitoring.version,
-                                    inline: true
-                                },
-                                {
-                                    name: 'Scoping project id',
-                                    value: monitoring.incident.scoping_project_id,
-                                    inline: true
-                                },
-                                {
-                                    name: 'Incident timing',
-                                    value: (monitoring.incident.ended_at - monitoring.incident.started_at) / 60000 + ' min',
-                                    inline: true
-                                },
-                                {
-                                    name: 'Incident incident',
-                                    value: monitoring.incident.state,
-                                    inline: true
-                                },
-                                {
-                                    name: 'Resource type',
-                                    value: monitoring.incident.resource_type_display_name,
-                                    inline: true
-                                },
-                                {
-                                    name: 'Resource name',
-                                    value: monitoring.incident.resource_name,
-                                    inline: true
-                                }
-                            ]
-                        }
-                    ]
-                }
+                webhookData
             )
                 .then(() => {
                     console.log('[REQUEST] Success webhook');
