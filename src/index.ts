@@ -3,9 +3,9 @@ import * as net from 'net';
 import axios from 'axios';
 
 const port: number = process.env.PORT ? parseInt(process.env.PORT) : 8080;
-const authenticate: string = Buffer.from(process.env.AUTH_USERNAME + ':' + process.env.AUTH_PASSWORD).toString('base64');
 
 function application(request: http.IncomingMessage, response: http.ServerResponse): void {
+    const authenticate: string = Buffer.from(process.env.AUTH_USERNAME + ':' + process.env.AUTH_PASSWORD).toString('base64');
     const authorization: string | undefined = request.headers.authorization;
     let data: string = '';
 
@@ -27,7 +27,7 @@ function application(request: http.IncomingMessage, response: http.ServerRespons
     const [, auth] = (<string>authorization).split(' ');
 
     if (auth !== authenticate) {
-        console.log('[SERVER] authentificate failed : %s (%s)', Buffer.from(auth).toString('utf-8'), auth);
+        console.log('[SERVER] authentificate failed : %s', auth);
         request.removeListener('data', handlerData);
         response.writeHead(401, {
             'Content-Type': 'text/plain',
