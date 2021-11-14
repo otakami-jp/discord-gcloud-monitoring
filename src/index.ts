@@ -6,6 +6,7 @@ const port: number = process.env.PORT ? parseInt(process.env.PORT) : 8080;
 
 function application(request: http.IncomingMessage, response: http.ServerResponse): void {
     const authenticate: string = Buffer.from(process.env.AUTH_USERNAME + ':' + process.env.AUTH_PASSWORD).toString('base64');
+    console.log(authenticate, process.env);
     const authorization: string | undefined = request.headers.authorization;
     let data: string = '';
 
