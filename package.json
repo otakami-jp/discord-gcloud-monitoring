@@ -1,0 +1,35 @@
+{
+  "name": "discord-gcloud-monitoring",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/otakami-jp/discord-gcloud-monitoring.git"
+  },
+  "keywords": [
+    "discord",
+    "webhook",
+    "gcloud"
+  ],
+  "author": "Otakami Crew",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/otakami-jp/discord-gcloud-monitoring/issues"
+  },
+  "homepage": "https://github.com/otakami-jp/discord-gcloud-monitoring#readme",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.7",
+    "typescript": "^4.4.4"
+  },
+  "dependencies": {
+    "axios": "^0.24.0"
+  }
+}
