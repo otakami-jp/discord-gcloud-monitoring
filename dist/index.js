@@ -46,7 +46,7 @@ function application(request, response) {
     ;
     const [, auth] = authorization.split(' ');
     if (auth !== authenticate) {
-        console.log('[SERVER] authentificate failed : %s (%s)', Buffer.from(auth).toString('utf-8'), auth);
+        console.log('[SERVER] authentificate failed : %s', auth);
         request.removeListener('data', handlerData);
         response.writeHead(401, {
             'Content-Type': 'text/plain',
@@ -57,58 +57,85 @@ function application(request, response) {
     }
     ;
     request.once('end', () => {
+        console.log('[SERVER] data raw receiving', data);
         let monitoring = JSON.parse(data);
         try {
-            axios_1.default.post(`https://discord.com/api/webhooks/${process.env.WEBHOOK_ID}/${process.env.WEBHOOK_TOKEN}`, {
-                content: monitoring.incident.documentation.content,
+            const webhookData = {
                 embeds: [
                     {
-                        title: 'Incident report (' + monitoring.incident.resource_name + ')',
+                        title: 'Incident report (' + monitoring.incident.incident_id + ')',
                         type: 'rich',
-                        description: monitoring.incident.summary,
-                        url: monitoring.incident.url,
-                        color: 0xE12121,
-                        footer: {
-                            text: 'Project ID : ' + monitoring.incident.resource.labels.project_id
-                        },
-                        author: {
-                            name: 'Resource : ' + monitoring.incident.resource_display_name
-                        },
-                        fields: [
-                            {
-                                name: 'Monitoring version',
-                                value: 'v' + monitoring.version,
-                                inline: true
-                            },
-                            {
-                                name: 'Scoping project id',
-                                value: monitoring.incident.scoping_project_id,
-                                inline: true
-                            },
-                            {
-                                name: 'Incident timing',
-                                value: (monitoring.incident.ended_at - monitoring.incident.started_at) / 60000 + ' min',
-                                inline: true
-                            },
-                            {
-                                name: 'Incident incident',
-                                value: monitoring.incident.state,
-                                inline: true
-                            },
-                            {
-                                name: 'Resource type',
-                                value: monitoring.incident.resource_type_display_name,
-                                inline: true
-                            },
-                            {
-                                name: 'Resource name',
-                                value: monitoring.incident.resource_name,
-                                inline: true
-                            }
-                        ]
+                        description: monitoring.incident?.summary,
+                        url: monitoring.incident?.url,
+                        color: monitoring.version == 'test' ? 0xE1B621 : 0xE12121,
                     }
                 ]
-            })
+            };
+            if (monitoring.incident?.documentation?.content) {
+                webhookData.content = monitoring.incident.documentation.content;
+            }
+            ;
+            if (monitoring.incident?.resource?.labels.project_id) {
+                webhookData.embed.footer = {
+                    text: 'Project ID : ' + monitoring.incident.resource.labels.project_id
+                };
+            }
+            ;
+            if (monitoring.incident?.resource_display_name) {
+                webhookData.embed.author = {
+                    name: 'Resource : ' + monitoring.incident?.resource_display_name
+                };
+            }
+            ;
+            const fields = [
+                {
+                    name: 'Monitoring version',
+                    value: monitoring.version,
+                    inline: true
+                },
+            ];
+            if (monitoring.incident?.scoping_project_id) {
+                fields.push({
+                    name: 'Scoping project id',
+                    value: monitoring.incident.scoping_project_id,
+                    inline: true
+                });
+            }
+            ;
+            if (monitoring.incident?.ended_at && monitoring.incident?.started_at) {
+                fields.push({
+                    name: 'Incident timing',
+                    value: (monitoring.incident.ended_at - monitoring.incident.started_at) / 60000 + ' min',
+                    inline: true
+                });
+            }
+            ;
+            if (monitoring.incident?.state) {
+                fields.push({
+                    name: 'Incident incident',
+                    value: monitoring.incident.state,
+                    inline: true
+                });
+            }
+            ;
+            if (monitoring.incident?.resource_type_display_name) {
+                fields.push({
+                    name: 'Resource type',
+                    value: monitoring.incident.resource_type_display_name,
+                    inline: true
+                });
+            }
+            ;
+            if (monitoring.incident?.resource_name) {
+                fields.push({
+                    name: 'Resource name',
+                    value: monitoring.incident.resource_name,
+                    inline: true
+                });
+            }
+            ;
+            webhookData.embed.fields = fields;
+            axios_1.default.post(`https://discord.com/api/webhooks/${process.env.WEBHOOK_ID}/${process.env.WEBHOOK_TOKEN}`, webhookData)
                 .then(() => {
                 console.log('[REQUEST] Success webhook');
                 response.writeHead(204);
